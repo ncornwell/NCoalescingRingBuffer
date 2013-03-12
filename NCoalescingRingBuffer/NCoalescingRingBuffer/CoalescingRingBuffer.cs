@@ -24,7 +24,7 @@ namespace NCoalescingRingBuffer
 
         public CoalescingRingBuffer(int capacity)
         {
-            checkIsPowerOfTwo(capacity);
+            CheckIsPowerOfTwo(capacity);
             _mask = capacity - 1;
             _capacity = capacity;
 
@@ -35,7 +35,7 @@ namespace NCoalescingRingBuffer
             _values = new Volatile.ReferenceArray<V>(capacity);
         }
 
-        private void checkIsPowerOfTwo(int capacity)
+        private static void CheckIsPowerOfTwo(int capacity)
         {
             int n = capacity;
             int count = 0;
