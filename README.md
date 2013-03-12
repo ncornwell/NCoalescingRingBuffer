@@ -5,5 +5,7 @@ https://github.com/LMAX-Exchange/LMAXCollections
 
 Limitations
 ===========
-Due to the differences in .NET and java, the buffer can only use classes as items in the buffer (no ints, longs, etc).
+Due to the differences in .NET and java, the buffer can only use classes as items in the buffer (no ints, longs, etc). 
+It also relies on a volatile package imported from the .NET Disruptor port which can be found here:
+https://github.com/odeheurles/Disruptor-net
 
