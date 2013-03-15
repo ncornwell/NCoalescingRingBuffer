@@ -10,7 +10,7 @@ namespace NCoalescingRingBuffer
     public class CoalescingRingBuffer<K, V> : ICoalescingBuffer<K, V> where V : class
     {
         private Volatile.Long _nextWrite = new Volatile.Long(1); // the next write index
-        private Volatile.Long _lastCleaned = new Volatile.Long(0); // the last index that was nulled out by the producer
+        private long _lastCleaned = 0; // the last index that was nulled out by the producer
         private Volatile.Long _rejectionCount = new Volatile.Long(0);
         private readonly K[] _keys;
         private readonly Volatile.ReferenceArray<V> _values;
@@ -133,21 +133,21 @@ namespace NCoalescingRingBuffer
         private void CleanUp()
         {
             var lastRead = _lastRead.ReadFullFence();
-            var lastCleaned = _lastCleaned.ReadFullFence();
+            var lastCleaned = _lastCleaned;
 
             if (lastRead == lastCleaned)
             {
                 return;
             }
 
-            for (var nextClean = lastCleaned + 1; nextClean <= lastRead; nextClean++)
+            while (lastCleaned < lastRead)
             {
-                var index = Mask(nextClean);
+                var index = Mask(++lastCleaned);
                 _keys[index] = default(K);
-                _values.WriteFullFence(index, null);
+                _values.WriteCompilerOnlyFence(index, null);
             }
-
-            _lastCleaned.WriteFullFence(lastRead);
+            
+            _lastCleaned = lastRead;
         }
 
         private void Store(K key, V value)
