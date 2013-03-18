@@ -195,7 +195,7 @@ namespace NCoalescingRingBuffer
             }
 
             int readCount = (int)(nextRead - lastRead - 1);
-            _lastRead.WriteFullFence(nextRead - 1);
+            _lastRead.WriteCompilerOnlyFence(nextRead - 1);
 
             return readCount;
         }
