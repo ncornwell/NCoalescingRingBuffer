@@ -24,31 +24,21 @@ namespace NCoalescingRingBuffer
 
         public CoalescingRingBuffer(int capacity)
         {
-            CheckIsPowerOfTwo(capacity);
-            _mask = capacity - 1;
-            _capacity = capacity;
+            _capacity = NextPowerOfTwo(capacity);
+            _mask = _capacity - 1;
 
+            _keys = new K[_capacity];
 
-            _keys = new K[capacity];
-
-
-            _values = new Volatile.ReferenceArray<V>(capacity);
+            _values = new Volatile.ReferenceArray<V>(_capacity);
         }
 
-        private static void CheckIsPowerOfTwo(int capacity)
+        private static int NextPowerOfTwo(int value)
         {
-            int n = capacity;
-            int count = 0;
-            while (n != 0)
-            {
-                count++;
-                n &= (n - 1);
-            }
+            int power = 1;
+            while (power < value)
+                power *= 2;
 
-            if (count != 1)
-            {
-                throw new Exception("capacity (" + capacity + ") must be a power of two");
-            }
+            return power;
         }
 
         public int Size()

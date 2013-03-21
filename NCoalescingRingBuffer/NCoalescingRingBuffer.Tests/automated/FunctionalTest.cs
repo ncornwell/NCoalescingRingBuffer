@@ -15,12 +15,31 @@ namespace NCoalescingRingBuffer.Tests.automated
         [SetUp]
         public void BeforeEveryTest()
         {
-            Buffer = CreateBuffer(16);
+            Buffer = CreateBuffer(10);
         }
 
         public ICoalescingBuffer<long, MarketSnapshot> CreateBuffer(int capacity)
         {
             return new CoalescingRingBuffer<long, MarketSnapshot>(capacity);
+        }
+
+        [Test]
+        public void ShouldCorrectlyIncreaseTheCapacityToTheNextHigherPowerOfTwo()
+        {
+            CheckCapacity(1024, CreateBuffer(1023));
+            CheckCapacity(1024, CreateBuffer(1024));
+            CheckCapacity(2048, CreateBuffer(1025));
+        }
+
+        private void CheckCapacity(int capacity, ICoalescingBuffer<long, MarketSnapshot> buffer)
+        {
+            Assert.AreEqual(capacity, buffer.Capacity());
+
+            for (int i = 0; i < capacity; i++)
+            {
+                bool success = buffer.Offer(MarketSnapshot.CreateMarketSnapshot(i, i, i));
+                Assert.True(success);
+            }
         }
 
         [Test]
