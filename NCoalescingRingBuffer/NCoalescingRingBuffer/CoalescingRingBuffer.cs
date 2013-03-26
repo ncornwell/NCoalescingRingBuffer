@@ -153,41 +153,35 @@ namespace NCoalescingRingBuffer
 
         public int Poll(ICollection<V> bucket)
         {
-            ClaimUpTo(_nextWrite);
-            return Fill(bucket);
+            return Fill(bucket, _nextWrite.ReadFullFence());
         }
 
         public int Poll(ICollection<V> bucket, int maxItems)
         {
-            ClaimUpTo(new Volatile.Long(Min(_nextRead.ReadFullFence() + maxItems, _nextWrite.ReadFullFence())));
-            return Fill(bucket);
+            var claimUpTo = Min(_nextRead.ReadFullFence() + maxItems, _nextWrite.ReadFullFence());
+            return Fill(bucket, claimUpTo);
         }
 
         public static long Min(long a, long b)
         {
             return (a <= b) ? a : b;
         }
-
-        private void ClaimUpTo(Volatile.Long claimIndex)
+        
+        private int Fill(ICollection<V> bucket, long claimUpTo)
         {
-            _nextRead = claimIndex;
-        }
+            _nextRead.WriteFullFence(claimUpTo);
+            var lastRead = _lastRead.ReadFullFence();
 
-        private int Fill(ICollection<V> bucket)
-        {
-            long nextRead = _nextRead.ReadFullFence();
-            long lastRead = _lastRead.ReadFullFence();
-
-            for (long readIndex = lastRead + 1; readIndex < nextRead; readIndex++)
+            for (long readIndex = lastRead + 1; readIndex < claimUpTo; readIndex++)
             {
                 int index = Mask(readIndex);
                 bucket.Add(_values.ReadFullFence(index));
             }
 
-            int readCount = (int)(nextRead - lastRead - 1);
-            _lastRead.WriteCompilerOnlyFence(nextRead - 1);
 
-            return readCount;
+            _lastRead.WriteCompilerOnlyFence(claimUpTo - 1);
+
+            return (int)(claimUpTo - lastRead - 1);
         }
 
         private int Mask(long value)
